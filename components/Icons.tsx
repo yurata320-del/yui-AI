@@ -64,6 +64,29 @@ export function NoteIcon({ className }: { className?: string }) {
   );
 }
 
+export function BirdIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden="true"
+      className={className}
+    >
+      <path
+        d="M4 13c0-4 3.2-7 7.5-7 3 0 5.2 1.6 6 3.8L20 9l-2 2.2c-.3 3.7-3.5 6.3-7.3 6.3-2 0-3.7-.6-4.7-1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="14.5" cy="10" r="0.9" fill="currentColor" stroke="none" />
+      <path d="M4 13c1 .6 2.2.9 3.5.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 /** 新しいアプリを作るときの見本用アイコン(星)。 */
 export function StarIcon({ className }: { className?: string }) {
   return (

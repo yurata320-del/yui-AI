@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { CounterIcon, HandIcon, NoteIcon } from '@/components/Icons';
+import { CounterIcon, HandIcon, NoteIcon, BirdIcon } from '@/components/Icons';
 
 /**
  * ホーム画面(トップページ)。
@@ -42,6 +42,13 @@ const TILES: Tile[] = [
     description: '書いたことをブラウザに保存する。とじても消えない。',
     accent: '#5b8a72', // グリーン
     icon: NoteIcon,
+  },
+  {
+    href: '/apps/piyo-game',
+    title: 'ぴよちゃんゲーム',
+    description: 'タップで空を飛んで、土管をよけながらコインをあつめるゲーム。',
+    accent: '#5f7a94', // ブルー
+    icon: BirdIcon,
   },
 ];
 
