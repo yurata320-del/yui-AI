@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * アプリ全体の見た目のルール。
+ *
+ * ここで「よく使う組み合わせ」に名前をつけておくと、
+ * 画面を作るときに class="ui-card" のように短く書けて、
+ * どの画面も自然に同じデザインでそろう。
+ *
+ * 新しいアプリを作るときは、まずここにある ui-◯◯ を使ってみて、
+ * どうしても足りないときだけ新しく足すのがおすすめ。
+ */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-ink-50 text-ink-900 text-base;
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  }
+  /* キーボードのTabキーで移動したときに、今どこにいるか分かるようにする */
+  :focus-visible {
+    outline: 3px solid #265ae0;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* 指で押しやすい最小の大きさ。ボタンにはこれをつける */
+  .tap-target {
+    @apply min-h-tap min-w-tap inline-flex items-center justify-center;
+  }
+
+  /* 白い箱。中身をひとまとまりに見せたいときに使う */
+  .ui-card {
+    @apply bg-white border border-ink-200 rounded-lg;
+  }
+
+  /* 画面のいちばん大きい見出し */
+  .ui-page-title {
+    @apply text-[28px] sm:text-[32px] font-semibold text-ink-900 tracking-tight leading-tight;
+  }
+
+  /* 見出しの上にある小さな英字ラベル(かざり) */
+  .ui-eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400;
+  }
+
+  /* ちいさな見出し(箱の中の区切り) */
+  .ui-section-title {
+    @apply text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-400;
+  }
+
+  /* 大きく見せたい数字。数字がガタつかないよう tabular-nums をつけてある */
+  .ui-number {
+    @apply text-[40px] font-semibold text-ink-900 tabular-nums tracking-tight leading-none;
+  }
+
+  /* 目立たせたいボタン(黒) */
+  .ui-btn-primary {
+    @apply tap-target rounded-md bg-ink-900 text-white text-sm font-medium px-4 hover:bg-ink-700 active:bg-ink-800 disabled:bg-ink-300 disabled:cursor-not-allowed transition-colors;
+  }
+
+  /* ふつうのボタン(白) */
+  .ui-btn-secondary {
+    @apply tap-target rounded-md bg-white border border-ink-300 text-ink-800 text-sm font-medium px-4 hover:border-ink-500 hover:bg-ink-50 transition-colors;
+  }
+
+  /* 文字を入力する欄 */
+  .ui-input {
+    @apply w-full min-h-tap rounded-md border border-ink-300 px-3 py-2 text-base focus:border-ink-900;
+  }
+
+  /* 文章の中のリンク */
+  .ui-link {
+    @apply text-ink-700 underline decoration-ink-300 underline-offset-2 hover:text-ink-900 hover:decoration-ink-500 transition-colors;
+  }
+}
