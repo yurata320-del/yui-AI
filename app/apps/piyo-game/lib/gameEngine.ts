@@ -10,14 +10,48 @@
 export const GRAVITY = 1500; // 重力の強さ(下に落ちる速さがどんどん増える)
 export const FLAP_VELOCITY = -430; // タップした瞬間の「ふわっ」と上がる速さ
 export const MAX_FALL_SPEED = 640; // 落ちる速さの上限(これ以上は速くならない)
-export const PIPE_SPEED = 150; // 土管が流れてくる速さ
 export const PIPE_WIDTH = 68; // 土管の横はば
 export const PIPE_GAP = 220; // 上下の土管のあいだの、通り道の広さ
-export const PIPE_SPACING = 300; // 土管と土管の、横のかんかく
 export const GROUND_HEIGHT = 56; // 下の地面の高さ
 export const BIRD_X_RATIO = 0.28; // ぴよちゃんの横の位置(画面はばの何割か)
 export const BIRD_RADIUS = 22; // ぴよちゃんの当たり判定の大きさ(半径)
 export const COIN_RADIUS = 20; // コインの当たり判定の大きさ(半径)
+
+// ---- だんだんむずかしくなる設定 ----
+// 土管が流れる速さ: はじめは遅く、プレイ時間が長くなるほど少しずつ速くなり、上限で止まる
+export const BASE_PIPE_SPEED = 150; // はじめの速さ
+export const MAX_PIPE_SPEED = 260; // これ以上は速くならない上限
+export const SPEED_RAMP_PER_SEC = 4; // 1秒プレイするごとに、これだけ速くなる
+
+// 土管と土管のかんかく: はじめは広く、時間がたつほど少しずつせまくなる
+export const BASE_PIPE_SPACING = 300; // はじめのかんかく
+export const MIN_PIPE_SPACING = 210; // これ以上はせまくならない下限
+export const SPACING_RAMP_SECONDS = 30; // このくらいの時間で、いちばんせまい所まで落ちつく
+
+// 「連続で土管がくる」むずかしいパート。6本ごとに、さいごの2本だけ、うんとせまくする
+export const BURST_PIPE_SPACING = 165; // 連続パート中の、せまいかんかく
+export const BURST_CYCLE = 6; // 何本ごとに1回、連続パートを混ぜるか
+export const BURST_LENGTH = 2; // 連続パートは何本つづくか
+
+/** 今のプレイ時間(elapsed)から、今の土管の速さを計算する */
+export function currentPipeSpeed(elapsed: number): number {
+  return Math.min(BASE_PIPE_SPEED + SPEED_RAMP_PER_SEC * elapsed, MAX_PIPE_SPEED);
+}
+
+/** 今のプレイ時間から、「連続パートじゃないとき」の土管のかんかくを計算する */
+function rampedPipeSpacing(elapsed: number): number {
+  const progress = Math.min(elapsed / SPACING_RAMP_SECONDS, 1);
+  return BASE_PIPE_SPACING - (BASE_PIPE_SPACING - MIN_PIPE_SPACING) * progress;
+}
+
+/**
+ * 次(nextIndex本目)に出す土管が、「連続パート」に当たるかどうか。
+ * 例: BURST_CYCLE=6, BURST_LENGTH=2 のときは、6本ごとの5本目・6本目がせまくなる。
+ */
+function isBurstPipe(nextIndex: number): boolean {
+  const positionInCycle = ((nextIndex - 1) % BURST_CYCLE) + 1; // 1〜BURST_CYCLE
+  return positionInCycle > BURST_CYCLE - BURST_LENGTH;
+}
 
 export interface Pipe {
   id: number;
@@ -36,6 +70,8 @@ export interface GameState {
   distanceSinceSpawn: number; // 次の土管を出すまでの、たまった距離
   status: GameStatus;
   nextPipeId: number;
+  elapsed: number; // 'playing' 状態だった時間の合計(秒)。むずかしさの計算に使う
+  pipesSpawned: number; // これまでに出した土管の本数(連続パートの判定に使う)
 }
 
 export interface StageSize {
@@ -53,6 +89,8 @@ export function createInitialState(stage: StageSize): GameState {
     distanceSinceSpawn: 0,
     status: 'ready',
     nextPipeId: 1,
+    elapsed: 0,
+    pipesSpawned: 0,
   };
 }
 
@@ -73,22 +111,30 @@ function createPipe(id: number, stage: StageSize): Pipe {
 export function stepGame(state: GameState, dt: number, stage: StageSize): GameState {
   if (state.status !== 'playing') return state;
 
+  // プレイ時間をすすめて、今の「速さ」を決める(長く生きのこるほど、少しずつ速くなる)
+  const elapsed = state.elapsed + dt;
+  const speed = currentPipeSpeed(elapsed);
+
   // ぴよちゃんの上下移動(重力で落ちて、タップで上がる)
   let velocity = Math.min(state.velocity + GRAVITY * dt, MAX_FALL_SPEED);
   let birdY = state.birdY + velocity * dt;
 
-  // 土管を左へ流す
+  // 土管を左へ流す(速さは今の難易度しだい)
   let pipes = state.pipes
-    .map((pipe) => ({ ...pipe, x: pipe.x - PIPE_SPEED * dt }))
+    .map((pipe) => ({ ...pipe, x: pipe.x - speed * dt }))
     .filter((pipe) => pipe.x + PIPE_WIDTH > -40);
 
-  // 新しい土管を出すタイミングか確認する
-  let distanceSinceSpawn = state.distanceSinceSpawn + PIPE_SPEED * dt;
+  // 新しい土管を出すタイミングか確認する。
+  // ふだんは時間とともに少しずつせまくなり、6本ごとに2本だけ「連続パート」でぐっとせまくなる。
+  let distanceSinceSpawn = state.distanceSinceSpawn + speed * dt;
   let nextPipeId = state.nextPipeId;
-  if (distanceSinceSpawn >= PIPE_SPACING) {
+  let pipesSpawned = state.pipesSpawned;
+  const targetSpacing = isBurstPipe(pipesSpawned + 1) ? BURST_PIPE_SPACING : rampedPipeSpacing(elapsed);
+  if (distanceSinceSpawn >= targetSpacing) {
     distanceSinceSpawn = 0;
     pipes = [...pipes, createPipe(nextPipeId, stage)];
     nextPipeId += 1;
+    pipesSpawned += 1;
   }
 
   const birdX = stage.width * BIRD_X_RATIO;
@@ -138,6 +184,8 @@ export function stepGame(state: GameState, dt: number, stage: StageSize): GameSt
     coins: state.coins + coinsGained,
     distanceSinceSpawn,
     nextPipeId,
+    elapsed,
+    pipesSpawned,
     status: collided ? 'over' : 'playing',
   };
 }

@@ -76,13 +76,16 @@ export function BirdIcon({ className }: { className?: string }) {
       aria-hidden="true"
       className={className}
     >
-      <path
-        d="M4 13c0-4 3.2-7 7.5-7 3 0 5.2 1.6 6 3.8L20 9l-2 2.2c-.3 3.7-3.5 6.3-7.3 6.3-2 0-3.7-.6-4.7-1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="14.5" cy="10" r="0.9" fill="currentColor" stroke="none" />
-      <path d="M4 13c1 .6 2.2.9 3.5.6" strokeLinecap="round" />
+      {/* からだ(まる) */}
+      <ellipse cx="10" cy="13" rx="6.2" ry="5.6" />
+      {/* はね */}
+      <path d="M5 14.5c2.5-3.2 7-3.2 9-0.5" strokeLinecap="round" />
+      {/* しっぽ */}
+      <path d="M4.3 16.2 2.2 18.3M4.6 13.3 2.3 14.6" strokeLinecap="round" />
+      {/* くちばし(ぬりつぶし) */}
+      <path d="M15 12.4 20 11 16.2 15.2Z" fill="currentColor" stroke="none" />
+      {/* 目(ぬりつぶし) */}
+      <circle cx="12.8" cy="10.2" r="1.1" fill="currentColor" stroke="none" />
     </svg>
   );
 }

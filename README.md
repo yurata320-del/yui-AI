@@ -75,7 +75,7 @@ export default function Page() {
   href: '/apps/しんきアプリ',
   title: 'あたらしいアプリ',
   description: 'なにができるか、みじかく書く。',
-  accent: '#8a5a5a',
+  accent: POP_COLORS.green, // 下の「タイルの色」から選ぶ
   icon: StarIcon,
 },
 ```
@@ -99,6 +99,10 @@ export default function Page() {
 | `ui-btn-secondary` | ふつうのボタン（白） |
 | `ui-input` | 文字を入力する欄 |
 | `ui-link` | リンク |
+| `ui-tile` | ホームのタイル(色をぬった、ポップなカード) |
+| `ui-tile-icon` | タイルの中の、まるいアイコンバッジ |
+| `ui-tile-title` | タイルの名前 |
+| `ui-tile-desc` | タイルの説明文 |
 
 使いかた:
 
@@ -108,9 +112,11 @@ export default function Page() {
 </div>
 ```
 
-タイルの色は、この5色から選ぶとまとまって見える:
+タイルは背景いっぱいに色をぬった、ポップなカードになっている
+（小学生が見て楽しいように、はっきりした色にしてある）。
+色は `app/page.tsx` の `POP_COLORS` から選ぶ:
 
-`#33415c` ネイビー / `#7a5c3e` ブロンズ / `#5b8a72` グリーン / `#8a5a5a` レッド / `#5f7a94` ブルー
+`#FFC93C` イエロー / `#FF6F91` ピンク / `#29B6F6` ブルー / `#7ED957` グリーン / `#A66DD4` パープル
 
 ---
 
