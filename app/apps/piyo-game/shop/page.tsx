@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import PiyoBird, { type AccessorySlot } from '../components/PiyoBird';
 import PiyoHeader from '../components/PiyoHeader';
 import PiyoBottomNav from '../components/PiyoBottomNav';
-import { loadPiyoData, savePiyoData, type PiyoSaveData } from '../lib/storage';
+import { loadPiyoData, savePiyoData, INITIAL_DATA, type PiyoSaveData } from '../lib/storage';
 import { ACCESSORIES } from '../lib/accessories';
 
 /**
@@ -20,6 +20,9 @@ import { ACCESSORIES } from '../lib/accessories';
  */
 export default function PiyoShopPage() {
   const [saved, setSaved] = useState<PiyoSaveData | null>(null);
+  // 「リセットする」ボタンをまちがえて1回押しただけで消えないように、
+  // 一度「ほんとうに消す?」を聞くための目印
+  const [confirmingReset, setConfirmingReset] = useState(false);
 
   useEffect(() => {
     setSaved(loadPiyoData());
@@ -57,6 +60,14 @@ export default function PiyoShopPage() {
       savePiyoData(updated);
       return updated;
     });
+  }
+
+  // ポイント・ハイスコア・買ったアクセサリーを、ぜんぶ最初の状態にもどす
+  function handleReset() {
+    const fresh: PiyoSaveData = { ...INITIAL_DATA };
+    savePiyoData(fresh);
+    setSaved(fresh);
+    setConfirmingReset(false);
   }
 
   const points = saved?.points ?? 0;
@@ -170,6 +181,41 @@ export default function PiyoShopPage() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* データのリセット(まちがえて消さないよう、1回確認する) */}
+            <div className="flex flex-col items-center gap-piyo-xs pb-piyo-lg pt-piyo-xs">
+              {confirmingReset ? (
+                <div className="flex w-full flex-col items-center gap-piyo-xs rounded-piyo bg-piyo-error-container p-piyo-sm text-center">
+                  <p className="font-piyo-label text-piyo-label-md text-piyo-on-error-container">
+                    ポイント・ハイスコア・アクセサリーが、ぜんぶ消えるよ。ほんとうにいい?
+                  </p>
+                  <div className="flex gap-piyo-xs">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingReset(false)}
+                      className="rounded-full bg-piyo-surface-container-lowest px-piyo-md py-piyo-xs font-piyo-label text-piyo-label-md text-piyo-on-surface shadow-sm"
+                    >
+                      やめる
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleReset}
+                      className="rounded-full bg-piyo-error px-piyo-md py-piyo-xs font-piyo-label text-piyo-label-md text-piyo-on-error shadow-sm"
+                    >
+                      ぜんぶ消す
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingReset(true)}
+                  className="font-piyo-label text-piyo-label-sm text-piyo-on-surface-variant underline underline-offset-2"
+                >
+                  ポイント・ハイスコアをリセットする
+                </button>
+              )}
             </div>
           </div>
         )}
