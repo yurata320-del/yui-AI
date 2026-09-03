@@ -83,14 +83,51 @@ export default function PiyoShopPage() {
           <p className="p-piyo-md text-center text-piyo-label-md text-piyo-on-surface-variant">読みこみ中…</p>
         ) : (
           <div className="flex w-full flex-col gap-piyo-md px-piyo-hud-safe-side">
-            <div>
-              <h1 className="font-piyo-headline text-piyo-headline-lg-mobile text-piyo-primary">
-                アクセサリーショップ
-              </h1>
-              <p className="mt-piyo-xxs font-piyo-body text-piyo-body-md text-piyo-on-surface-variant">
-                ポイントでぴよちゃんをおしゃれにかざろう！(見た目だけで、つよさは変わらないよ)
-              </p>
+            <div className="flex items-start justify-between gap-piyo-sm">
+              <div>
+                <h1 className="font-piyo-headline text-piyo-headline-lg-mobile text-piyo-primary">
+                  アクセサリーショップ
+                </h1>
+                <p className="mt-piyo-xxs font-piyo-body text-piyo-body-md text-piyo-on-surface-variant">
+                  ポイントでぴよちゃんをおしゃれにかざろう！(見た目だけで、つよさは変わらないよ)
+                </p>
+              </div>
+              {/* データのリセット(いちばん上から、すぐ押せる場所に置いておく) */}
+              <button
+                type="button"
+                onClick={() => setConfirmingReset(true)}
+                aria-label="ポイント・ハイスコアをリセットする"
+                className="flex shrink-0 items-center gap-piyo-xxs rounded-full border border-piyo-outline-variant bg-piyo-surface-container-lowest px-piyo-sm py-piyo-xs font-piyo-label text-piyo-label-sm text-piyo-on-surface-variant shadow-sm active:translate-y-1"
+              >
+                <span className="material-symbols-outlined text-[16px]">restart_alt</span>
+                リセット
+              </button>
             </div>
+
+            {/* リセットする?の確認(押すまでは何も消えない) */}
+            {confirmingReset && (
+              <div className="flex w-full flex-col items-center gap-piyo-xs rounded-piyo bg-piyo-error-container p-piyo-sm text-center">
+                <p className="font-piyo-label text-piyo-label-md text-piyo-on-error-container">
+                  ポイント・ハイスコア・アクセサリーが、ぜんぶ消えるよ。ほんとうにいい?
+                </p>
+                <div className="flex gap-piyo-xs">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingReset(false)}
+                    className="rounded-full bg-piyo-surface-container-lowest px-piyo-md py-piyo-xs font-piyo-label text-piyo-label-md text-piyo-on-surface shadow-sm"
+                  >
+                    やめる
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="rounded-full bg-piyo-error px-piyo-md py-piyo-xs font-piyo-label text-piyo-label-md text-piyo-on-error shadow-sm"
+                  >
+                    ぜんぶ消す
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* 試着プレビュー */}
             <div className="flex flex-col items-center gap-piyo-sm rounded-piyo-lg bg-piyo-surface-container-low p-piyo-lg shadow-sm">
@@ -181,41 +218,6 @@ export default function PiyoShopPage() {
                   </div>
                 );
               })}
-            </div>
-
-            {/* データのリセット(まちがえて消さないよう、1回確認する) */}
-            <div className="flex flex-col items-center gap-piyo-xs pb-piyo-lg pt-piyo-xs">
-              {confirmingReset ? (
-                <div className="flex w-full flex-col items-center gap-piyo-xs rounded-piyo bg-piyo-error-container p-piyo-sm text-center">
-                  <p className="font-piyo-label text-piyo-label-md text-piyo-on-error-container">
-                    ポイント・ハイスコア・アクセサリーが、ぜんぶ消えるよ。ほんとうにいい?
-                  </p>
-                  <div className="flex gap-piyo-xs">
-                    <button
-                      type="button"
-                      onClick={() => setConfirmingReset(false)}
-                      className="rounded-full bg-piyo-surface-container-lowest px-piyo-md py-piyo-xs font-piyo-label text-piyo-label-md text-piyo-on-surface shadow-sm"
-                    >
-                      やめる
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleReset}
-                      className="rounded-full bg-piyo-error px-piyo-md py-piyo-xs font-piyo-label text-piyo-label-md text-piyo-on-error shadow-sm"
-                    >
-                      ぜんぶ消す
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmingReset(true)}
-                  className="font-piyo-label text-piyo-label-sm text-piyo-on-surface-variant underline underline-offset-2"
-                >
-                  ポイント・ハイスコアをリセットする
-                </button>
-              )}
             </div>
           </div>
         )}
