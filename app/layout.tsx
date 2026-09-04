@@ -8,8 +8,8 @@ import './globals.css';
  */
 
 export const metadata: Metadata = {
-  title: 'ゆいのアプリ',
-  description: 'じぶんで作ったアプリをならべておく場所',
+  title: 'ゆいAI工場',
+  description: 'ゲームや、べんりなものを作っていく場所',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

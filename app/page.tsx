@@ -50,8 +50,8 @@ export default function HomePage() {
     <div className="min-h-screen bg-ink-50">
       <div className="mx-auto max-w-4xl px-4 py-14 sm:py-20">
         <div className="text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">🎮 ゆいのアプリ</h1>
-          <p className="mt-3 text-sm font-medium text-ink-500">じぶんで作ったゲームを、どんどんふやしていくよ！</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">🏭 ゆいAI工場</h1>
+          <p className="mt-3 text-sm font-medium text-ink-500">ゲームや、べんりなものを、どんどん作っていくよ！</p>
         </div>
 
         <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
