@@ -121,6 +121,31 @@ const INSTRUCTION = `この写真は、小学生のテストの答案です。�
 - 写真から読みとれないことは、むりに作らない(点数が読めないときは -1)
 - まちがいが見つからないときは、mistakes と quiz を空っぽ([])にする`;
 
+/**
+ * クイズの選択肢の順番を、バラバラに入れかえる。
+ *
+ * なぜ必要か:
+ *   AIに作ってもらうと、正解がいつも同じ場所(Bなど)にかたよることがある。
+ *   それだと「いつもB」で当たってしまい、勉強にならない。
+ *   ここで1回だけ混ぜて、正解の場所がバラバラになるようにする。
+ */
+function shuffleChoices(quiz) {
+  return quiz.map((question) => {
+    // 正解の文字をおぼえておく
+    const correctText = question.choices[question.answerIndex];
+
+    // 選択肢を混ぜる(うしろから1つずつ、ランダムな相手と入れかえる)
+    const shuffled = [...question.choices];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    // 混ぜたあとの、正解の場所を探しなおす
+    return { ...question, choices: shuffled, answerIndex: shuffled.indexOf(correctText) };
+  });
+}
+
 /** AI(Claude)に写真を送って、読みとってもらう */
 async function askClaude(photoDataUrl) {
   // "data:image/jpeg;base64,ABC..." を、種類とデータに分ける
@@ -164,8 +189,12 @@ async function askClaude(photoDataUrl) {
   const textBlock = data.content.find((block) => block.type === 'text');
   if (!textBlock) throw new Error('AIの答えが読みとれなかったよ');
 
+  const result = JSON.parse(textBlock.text);
+  // 正解の位置がかたよらないように、選択肢を混ぜる
+  result.quiz = shuffleChoices(result.quiz);
+
   return {
-    result: JSON.parse(textBlock.text),
+    result,
     // 今回いくらぶんの文字を使ったか(お金の目安)
     usage: data.usage,
   };
