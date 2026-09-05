@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BirdIcon } from '@/components/Icons';
+import { BirdIcon, NoteIcon } from '@/components/Icons';
 
 /**
  * ホーム画面(トップページ)。
@@ -42,6 +42,13 @@ const TILES: Tile[] = [
     description: 'タップで空を飛んで、土管をよけながらコインをあつめるゲーム。',
     accent: POP_COLORS.blue,
     icon: BirdIcon,
+  },
+  {
+    href: '/apps/test-master',
+    title: 'テストマスター',
+    description: 'テストを撮って、まちがえた問題を復習してポイントをためるアプリ。',
+    accent: POP_COLORS.purple,
+    icon: NoteIcon,
   },
 ];
 

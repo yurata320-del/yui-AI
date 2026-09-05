@@ -90,6 +90,58 @@ const config: Config = {
           'on-error': '#ffffff',
           'on-error-container': '#93000a',
         },
+        // test = 「テスト復習アプリ(テストマスター)」専用の色。
+        // Stitch(デザインツール)で作った画面のコードから、そのままの数字をうつしてある。
+        // 他のアプリ(counter/janken/memo/piyo-game)には影響しない。
+        test: {
+          primary: '#004ac6',
+          'primary-container': '#2563eb',
+          'primary-fixed': '#dbe1ff',
+          'primary-fixed-dim': '#b4c5ff',
+          'on-primary': '#ffffff',
+          'on-primary-fixed': '#00174b',
+          'on-primary-fixed-variant': '#003ea8',
+          'on-primary-container': '#eeefff',
+          secondary: '#855300',
+          'secondary-container': '#fea619',
+          'secondary-fixed': '#ffddb8',
+          'secondary-fixed-dim': '#ffb95f',
+          'on-secondary': '#ffffff',
+          'on-secondary-fixed': '#2a1700',
+          'on-secondary-fixed-variant': '#653e00',
+          'on-secondary-container': '#684000',
+          tertiary: '#006242',
+          'tertiary-container': '#007d55',
+          'tertiary-fixed': '#6ffbbe',
+          'tertiary-fixed-dim': '#4edea3',
+          'on-tertiary': '#ffffff',
+          'on-tertiary-fixed': '#002113',
+          'on-tertiary-fixed-variant': '#005236',
+          'on-tertiary-container': '#bdffdb',
+          background: '#f9f9ff',
+          'on-background': '#111c2d',
+          surface: '#f9f9ff',
+          'surface-dim': '#cfdaf2',
+          'surface-bright': '#f9f9ff',
+          'surface-container-lowest': '#ffffff',
+          'surface-container-low': '#f0f3ff',
+          'surface-container': '#e7eeff',
+          'surface-container-high': '#dee8ff',
+          'surface-container-highest': '#d8e3fb',
+          'surface-variant': '#d8e3fb',
+          'surface-tint': '#0053db',
+          'on-surface': '#111c2d',
+          'on-surface-variant': '#434655',
+          outline: '#737686',
+          'outline-variant': '#c3c6d7',
+          'inverse-surface': '#263143',
+          'inverse-on-surface': '#ecf1ff',
+          'inverse-primary': '#b4c5ff',
+          error: '#ba1a1a',
+          'error-container': '#ffdad6',
+          'on-error': '#ffffff',
+          'on-error-container': '#93000a',
+        },
       },
       fontSize: {
         base: ['16px', '1.6'],
@@ -114,12 +166,23 @@ const config: Config = {
         'piyo-score': ['Rubik', 'sans-serif'],
         // piyo-body = ふつうの文章の書体(Quicksand)
         'piyo-body': ['Quicksand', 'sans-serif'],
+        // test-headline = 「テストマスター」の見出しの書体(Zen Maru Gothic = まるい日本語フォント)
+        'test-headline': ['Zen Maru Gothic', 'Plus Jakarta Sans', 'sans-serif'],
+        // test-body = 「テストマスター」のふつうの文章の書体
+        'test-body': ['Plus Jakarta Sans', 'sans-serif'],
       },
       borderRadius: {
         // piyo-◯◯ = 「ぴよちゃんゲーム」専用の角丸み。既存の rounded-lg 等は変えない。
         piyo: '1rem',
         'piyo-lg': '2rem',
         'piyo-xl': '3rem',
+        // test-◯◯ = 「テストマスター」専用の角丸み(Stitchのコードのまま)
+        // ※ Stitchは画面ごとに rounded-xl などの大きさがちがっていたので、
+        //   まちがえないように「s/m/l/xl = 実際の大きさ」で名前をつけてある。
+        'test-s': '1rem', // 16px … 小さなバッジなど
+        'test-m': '1.5rem', // 24px … 小さめのボタン
+        'test-l': '2rem', // 32px … カード、大きめのボタン
+        'test-xl': '3rem', // 48px … まるっこいカードやボタン
       },
       spacing: {
         // スマホで指が届きやすい最小の大きさ(44px)。ボタンはこれ以上にする。
