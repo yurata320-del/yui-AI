@@ -1,21 +1,21 @@
 'use client';
 
 /**
- * トイプードル(羽つき)を描く部品。
+ * ぴよちゃん(黄色い小鳥)を描く部品。
  *
- * もとは黄色い「ひよこ」だったキャラクターを、
- * なまはげ → トイプードル(かわいい羽つき)に変更した。
  * 画像ファイルを使うかわりに、SVG(線と図形で絵をかく仕組み)で描いている。
+ * 理由: 本物の画像素材がまだ無いので、CLAUDE.mdのルールにしたがって
+ *       まずはCSS/SVGの仮素材で「動くところ」を確認できるようにするため。
  *
  * accessory を渡すと、頭の上あたりに簡単なアクセサリーを重ねて表示できる
- * (ショップで装着したものを、ゲーム中のトイプードルにも反映するため)。
+ * (ショップで装着したものを、ゲーム中のぴよちゃんにも反映するため)。
  */
 
 export type AccessorySlot = 'ribbon' | 'hat' | 'glasses' | 'crown' | 'feather' | null;
 
 interface PiyoBirdProps {
   size?: number;
-  flap?: boolean; // うでを振り上げているかどうか
+  flap?: boolean; // はばたき中(はねが上がっている)かどうか
   accessory?: AccessorySlot;
   className?: string;
 }
@@ -28,71 +28,33 @@ export default function PiyoBird({ size = 96, flap = false, accessory = null, cl
       viewBox="0 0 100 100"
       className={className}
       role="img"
-      aria-label="トイプードル"
+      aria-label="ぴよちゃん"
     >
-      {/* からだ(まるい体) */}
-      <ellipse cx="50" cy="60" rx="28" ry="32" fill="#F5E6D3" />
-
-      {/* あたま(まるくてかわいい) */}
-      <circle cx="50" cy="38" r="22" fill="#F5E6D3" />
-
-      {/* 耳の毛(ふわふわ感) */}
-      <ellipse cx="32" cy="30" rx="10" ry="14" fill="#F5E6D3" />
-      <ellipse cx="68" cy="30" rx="10" ry="14" fill="#F5E6D3" />
-
-      {/* 耳の薄い部分 */}
-      <ellipse cx="32" cy="32" rx="5" ry="8" fill="#FFC4D6" />
-      <ellipse cx="68" cy="32" rx="5" ry="8" fill="#FFC4D6" />
-
-      {/* 目(やさしい目) */}
-      <circle cx="42" cy="35" r="4" fill="#2B2116" />
-      <circle cx="58" cy="35" r="4" fill="#2B2116" />
-      {/* 目のキラキラ */}
-      <circle cx="43" cy="34" r="1.5" fill="#ffffff" />
-      <circle cx="59" cy="34" r="1.5" fill="#ffffff" />
-
-      {/* 鼻 */}
-      <circle cx="50" cy="42" r="3" fill="#2B2116" />
-
-      {/* 口(笑顔) */}
-      <path d="M48 45 Q50 47 52 45" stroke="#2B2116" strokeWidth="2" strokeLinecap="round" fill="none" />
-
-      {/* 後ろ足(うしろ側) */}
-      <ellipse cx="62" cy="70" rx="7" ry="12" fill="#F5E6D3" />
-
-      {/* 前足(タップすると上に動く) */}
+      {/* からだ */}
+      <circle cx="50" cy="56" r="30" fill="#FFCB3D" />
+      {/* おなか(すこし明るい黄色) */}
+      <ellipse cx="46" cy="64" rx="18" ry="14" fill="#FFE28A" />
+      {/* はね(タップすると上に動く) */}
       <ellipse
-        cx="38"
-        cy="70"
-        rx="7"
-        ry="12"
-        fill="#F5E6D3"
-        transform={flap ? 'rotate(-35 38 70)' : 'rotate(-5 38 70)'}
+        cx="34"
+        cy="58"
+        rx="12"
+        ry="8"
+        fill="#F5B400"
+        transform={flap ? 'rotate(-35 34 58)' : 'rotate(-5 34 58)'}
         style={{ transition: 'transform 120ms ease-out' }}
       />
-
-      {/* 前足の肉球 */}
-      <circle cx="38" cy="82" r="3" fill="#FFC4D6" />
-
-      {/* 羽(背中の左側) - かなり大きくてかわいい翼 */}
-      <path
-        d="M20 58 Q5 42 0 20 Q10 55 38 65 Z"
-        fill="#FFB3D9"
-        stroke="#FF69B4"
-        strokeWidth="1.5"
-      />
-
-      {/* 羽(背中の右側) - かなり大きくてかわいい翼 */}
-      <path
-        d="M80 58 Q95 42 100 20 Q90 55 62 65 Z"
-        fill="#FFB3D9"
-        stroke="#FF69B4"
-        strokeWidth="1.5"
-      />
+      {/* くちばし */}
+      <path d="M76 52 L92 57 L76 63 Z" fill="#FF8F3D" />
+      {/* ほっぺ */}
+      <circle cx="60" cy="63" r="5" fill="#FFB6B6" opacity="0.7" />
+      {/* 目 */}
+      <circle cx="64" cy="48" r="6" fill="#2B2116" />
+      <circle cx="66" cy="46" r="1.6" fill="#ffffff" />
 
       {/* アクセサリー(装着中のものだけ表示) */}
       {accessory === 'ribbon' && (
-        <path d="M44 30 L50 36 L56 30 L54 38 L60 42 L50 40 L40 42 L46 38 Z" fill="#FF6B9D" />
+        <path d="M44 34 L50 40 L56 34 L54 42 L60 46 L50 44 L40 46 L46 42 Z" fill="#FF6B9D" />
       )}
       {accessory === 'hat' && (
         <g>
@@ -102,9 +64,9 @@ export default function PiyoBird({ size = 96, flap = false, accessory = null, cl
       )}
       {accessory === 'glasses' && (
         <g stroke="#2B2116" strokeWidth="2.5" fill="none">
-          <circle cx="40" cy="53" r="7" />
-          <circle cx="60" cy="53" r="7" />
-          <line x1="47" y1="53" x2="53" y2="53" />
+          <circle cx="56" cy="46" r="7" />
+          <circle cx="72" cy="46" r="7" fill="#ffffff" fillOpacity="0.001" />
+          <line x1="63" y1="46" x2="65" y2="46" />
         </g>
       )}
       {accessory === 'crown' && (
