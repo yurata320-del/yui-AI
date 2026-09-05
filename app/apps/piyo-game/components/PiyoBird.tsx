@@ -1,13 +1,14 @@
 'use client';
 
 /**
- * なまはげ(赤おに)を描く部品。
+ * トイプードル(羽つき)を描く部品。
  *
- * もとは黄色い「ひよこ」だったキャラクターを、なまはげに変更した。
+ * もとは黄色い「ひよこ」だったキャラクターを、
+ * なまはげ → トイプードル(かわいい羽つき)に変更した。
  * 画像ファイルを使うかわりに、SVG(線と図形で絵をかく仕組み)で描いている。
  *
  * accessory を渡すと、頭の上あたりに簡単なアクセサリーを重ねて表示できる
- * (ショップで装着したものを、ゲーム中のなまはげにも反映するため)。
+ * (ショップで装着したものを、ゲーム中のトイプードルにも反映するため)。
  */
 
 export type AccessorySlot = 'ribbon' | 'hat' | 'glasses' | 'crown' | 'feather' | null;
@@ -27,45 +28,66 @@ export default function PiyoBird({ size = 96, flap = false, accessory = null, cl
       viewBox="0 0 100 100"
       className={className}
       role="img"
-      aria-label="なまはげ"
+      aria-label="トイプードル"
     >
-      {/* かみの毛(わらのみの風、顔のうしろ側にちらっと見える) */}
-      <path
-        d="M20 46 C18 30 30 18 50 18 C70 18 82 30 80 46 L74 38 L68 48 L62 36 L56 48 L50 34 L44 48 L38 36 L32 48 L26 38 Z"
-        fill="#F4E7C1"
+      {/* からだ(まるい体) */}
+      <ellipse cx="50" cy="60" rx="28" ry="32" fill="#F5E6D3" />
+
+      {/* あたま(まるくてかわいい) */}
+      <circle cx="50" cy="38" r="22" fill="#F5E6D3" />
+
+      {/* 耳の毛(ふわふわ感) */}
+      <ellipse cx="32" cy="30" rx="10" ry="14" fill="#F5E6D3" />
+      <ellipse cx="68" cy="30" rx="10" ry="14" fill="#F5E6D3" />
+
+      {/* 耳の薄い部分 */}
+      <ellipse cx="32" cy="32" rx="5" ry="8" fill="#FFC4D6" />
+      <ellipse cx="68" cy="32" rx="5" ry="8" fill="#FFC4D6" />
+
+      {/* 目(やさしい目) */}
+      <circle cx="42" cy="35" r="4" fill="#2B2116" />
+      <circle cx="58" cy="35" r="4" fill="#2B2116" />
+      {/* 目のキラキラ */}
+      <circle cx="43" cy="34" r="1.5" fill="#ffffff" />
+      <circle cx="59" cy="34" r="1.5" fill="#ffffff" />
+
+      {/* 鼻 */}
+      <circle cx="50" cy="42" r="3" fill="#2B2116" />
+
+      {/* 口(笑顔) */}
+      <path d="M48 45 Q50 47 52 45" stroke="#2B2116" strokeWidth="2" strokeLinecap="round" fill="none" />
+
+      {/* 後ろ足(うしろ側) */}
+      <ellipse cx="62" cy="70" rx="7" ry="12" fill="#F5E6D3" />
+
+      {/* 前足(タップすると上に動く) */}
+      <ellipse
+        cx="38"
+        cy="70"
+        rx="7"
+        ry="12"
+        fill="#F5E6D3"
+        transform={flap ? 'rotate(-35 38 70)' : 'rotate(-5 38 70)'}
+        style={{ transition: 'transform 120ms ease-out' }}
       />
 
-      {/* かお(赤おにの顔) */}
-      <circle cx="50" cy="56" r="30" fill="#D64545" />
+      {/* 前足の肉球 */}
+      <circle cx="38" cy="82" r="3" fill="#FFC4D6" />
 
-      {/* つの(2本) */}
-      <path d="M32 30 L27 8 L41 26 Z" fill="#EDE0C8" />
-      <path d="M68 30 L73 8 L59 26 Z" fill="#EDE0C8" />
+      {/* 羽(背中の左側) - かなり大きくてかわいい翼 */}
+      <path
+        d="M20 58 Q5 42 0 20 Q10 55 38 65 Z"
+        fill="#FFB3D9"
+        stroke="#FF69B4"
+        strokeWidth="1.5"
+      />
 
-      {/* まゆげ(ギザギザで、おこった顔に) */}
-      <path d="M30 42 L38 46 L44 40 L48 44" stroke="#2B2116" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <path d="M70 42 L62 46 L56 40 L52 44" stroke="#2B2116" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-
-      {/* 目 */}
-      <circle cx="40" cy="53" r="6" fill="#ffffff" />
-      <circle cx="60" cy="53" r="6" fill="#ffffff" />
-      <circle cx="41" cy="54" r="3" fill="#2B2116" />
-      <circle cx="61" cy="54" r="3" fill="#2B2116" />
-
-      {/* 大きく開けた口ときば */}
-      <path d="M36 68 Q50 82 64 68 Q50 76 36 68 Z" fill="#7A1F1F" />
-      <path d="M42 68 L45 74 L48 68 Z" fill="#ffffff" />
-      <path d="M58 68 L55 74 L52 68 Z" fill="#ffffff" />
-
-      {/* うで(タップすると上に動く) */}
-      <ellipse
-        cx="30"
-        cy="62"
-        rx="10"
-        ry="7"
-        fill="#B93A3A"
-        transform={flap ? 'rotate(-40 30 62)' : 'rotate(-5 30 62)'}
-        style={{ transition: 'transform 120ms ease-out' }}
+      {/* 羽(背中の右側) - かなり大きくてかわいい翼 */}
+      <path
+        d="M80 58 Q95 42 100 20 Q90 55 62 65 Z"
+        fill="#FFB3D9"
+        stroke="#FF69B4"
+        strokeWidth="1.5"
       />
 
       {/* アクセサリー(装着中のものだけ表示) */}
