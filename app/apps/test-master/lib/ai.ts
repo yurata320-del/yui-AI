@@ -14,8 +14,14 @@ const LOCAL_AI_URL = 'http://localhost:8787/read-test';
  * インターネット上のAIサーバー(Cloudflare Workers)の住所。
  * ビルドするときに NEXT_PUBLIC_AI_URL から入る。
  * まだ置いていないときは空っぽで、そのときは自分で入力する形になる。
+ *
+ * ※ typeof process を先に見ているのは、住所を登録せずにビルドしたときに
+ *   「process なんて知らない」というエラーで画面全体がこわれるのを防ぐため。
  */
-const CLOUD_AI_URL = process.env.NEXT_PUBLIC_AI_URL ?? '';
+const CLOUD_AI_URL =
+  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_AI_URL
+    ? process.env.NEXT_PUBLIC_AI_URL
+    : '';
 
 /** 今いる場所が「自分のパソコン」かどうか */
 function isLocal(): boolean {
