@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import TestBottomNav from '../components/TestBottomNav';
+import { REVENGE_QUESTIONS } from '../lib/data';
 
 /**
  * 【テストマスター】3問リベンジクイズの画面
@@ -16,37 +17,8 @@ import TestBottomNav from '../components/TestBottomNav';
  *   - 「ヒントを見る」で、通分のヒントを出せる
  */
 
-// クイズの問題。left/right = ひき算する2つの分数
-// choices = えらぶ答え(4つ)、answerIndex = 正解が何番目か(0からかぞえる)
-const QUESTIONS = [
-  {
-    unit: '小5 分数のひき算',
-    left: { top: '1', bottom: '2' },
-    right: { top: '1', bottom: '3' },
-    choices: ['1 / 6', '2 / 5', '1 / 5', '2 / 6'],
-    answerIndex: 0,
-    hintTitle: '通分のヒント',
-    hintBody: '2と3の最小公倍数は6だね！ 1/2 ＝ 3/6、1/3 ＝ 2/6 に変身させてみよう。',
-  },
-  {
-    unit: '小5 分数のひき算',
-    left: { top: '5', bottom: '6' },
-    right: { top: '3', bottom: '8' },
-    choices: ['2 / 2', '11 / 24', '2 / 24', '1 / 4'],
-    answerIndex: 1,
-    hintTitle: '通分のヒント',
-    hintBody: '6と8の最小公倍数は24だね！ 5/6 ＝ 20/24、3/8 ＝ 9/24 に変身させてみよう。',
-  },
-  {
-    unit: '小5 分数のひき算',
-    left: { top: '3', bottom: '4' },
-    right: { top: '2', bottom: '5' },
-    choices: ['1 / 1', '5 / 9', '7 / 20', '1 / 20'],
-    answerIndex: 2,
-    hintTitle: '通分のヒント',
-    hintBody: '4と5の最小公倍数は20だね！ 3/4 ＝ 15/20、2/5 ＝ 8/20 に変身させてみよう。',
-  },
-];
+// クイズの問題は lib/data.ts にある(まちがえた問題から作る予定なので、いまはカラッポ)
+const QUESTIONS = REVENGE_QUESTIONS;
 
 // A・B・C・D の文字
 const CHOICE_LABELS = ['A', 'B', 'C', 'D'];
@@ -62,6 +34,49 @@ export default function TestMasterQuizPage() {
   const [isWrong, setIsWrong] = useState(false);
   // 3問ぜんぶ正解したかどうか(お祝いの画面を出す)
   const [isFinished, setIsFinished] = useState(false);
+
+  // 問題が1問もないときは、「まだ問題がないよ」の画面を出す
+  if (QUESTIONS.length === 0) {
+    return (
+      <div className="text-[14px] font-medium leading-[22px]">
+        <header className="test-pt-safe fixed top-0 z-40 w-full border-b border-test-surface-variant/40 bg-test-surface/90 backdrop-blur-md">
+          <div className="flex h-14 items-center justify-between px-4">
+            <div className="flex items-center gap-2">
+              <Link
+                href="/apps/test-master"
+                aria-label="戻る"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-test-surface-container-low text-test-on-surface transition-colors hover:bg-test-surface-container"
+              >
+                <span className="material-symbols-outlined text-xl">arrow_back</span>
+              </Link>
+              <span className="font-test-headline text-sm font-bold text-test-on-surface">リベンジクイズ</span>
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto flex w-full max-w-md flex-col gap-4 px-5 pb-28 pt-20">
+          <div className="flex flex-col items-center gap-1 rounded-test-s border border-test-outline-variant/30 bg-test-surface-container-lowest p-8 text-center shadow-sm">
+            <span className="material-symbols-outlined text-4xl text-test-outline-variant">bolt</span>
+            <p className="mt-2 font-test-headline text-sm font-bold text-test-on-surface">まだ問題がないよ</p>
+            <p className="text-xs leading-relaxed text-test-on-surface-variant">
+              テストのまちがいから問題を作るしくみは、
+              <br />
+              これから いっしょに作ろう！
+            </p>
+            <Link
+              href="/apps/test-master"
+              className="mt-4 flex items-center justify-center gap-2 rounded-test-xl bg-test-primary px-6 py-3 font-test-headline text-sm font-bold text-test-on-primary shadow-sm active:scale-[0.98]"
+            >
+              <span className="material-symbols-outlined text-xl">home</span>
+              <span>ホームへもどる</span>
+            </Link>
+          </div>
+        </main>
+
+        <TestBottomNav active="revenge" />
+      </div>
+    );
+  }
 
   const question = QUESTIONS[questionNumber];
 

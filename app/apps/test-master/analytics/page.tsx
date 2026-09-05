@@ -1,8 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import TestBottomNav from '../components/TestBottomNav';
+import {
+  REWARD_GOAL_POINTS,
+  REWARD_NAME,
+  SUBJECTS,
+  SUBJECT_STYLE,
+  USER_NAME,
+  type TestRecord,
+} from '../lib/data';
+import { countPoints, loadTests } from '../lib/storage';
 
 /**
  * 【テストマスター】教科別 成績・にがて分析の画面
@@ -10,68 +19,46 @@ import TestBottomNav from '../components/TestBottomNav';
  * Stitch のデザイン「教科別 成績・にがて分析 (シンプル版)」を、そのまま画面にしたもの。
  *
  * ここでやること:
- *   - 4教科の平均点と、教科ごとの点数のバーを見せる
- *   - AI先生のアドバイスを見せる
+ *   - 保存してあるテストから、平均点と教科ごとの点数を計算して見せる
  *   - 教科のタブ(すべて/算数/理科/国語/社会)を押すと、下の一覧をしぼりこむ
+ *   - まだ記録がないときは「まだ記録がないよ」と出す
  */
-
-// 教科ごとの点数バー(Stitchのデザインの数字と色のまま)
-const SUBJECT_BARS = [
-  { name: '理科', score: 92, barClass: 'bg-test-tertiary', scoreClass: 'text-test-primary' },
-  { name: '算数', score: 88, barClass: 'bg-test-primary', scoreClass: 'text-test-primary' },
-  { name: '国語', score: 85, barClass: 'bg-test-secondary-container', scoreClass: 'text-test-on-surface' },
-  { name: '社会', score: 80, barClass: 'bg-test-outline-variant', scoreClass: 'text-test-on-surface' },
-];
-
-// 教科をえらぶタブ
-const SUBJECT_TABS = ['すべて', '算数', '理科', '国語', '社会'];
-
-// 直近のテスト
-const RECENT_TESTS = [
-  {
-    subject: '算数',
-    mark: '算',
-    title: '算数テスト',
-    unit: '小数のわり算・図形の角',
-    score: 88,
-    tag: '+13点 UP',
-    markClass: 'bg-test-primary/10 text-test-primary',
-    tagClass: 'bg-test-surface-container text-test-primary',
-    scoreClass: 'text-test-primary',
-  },
-  {
-    subject: '理科',
-    mark: '理',
-    title: '理科テスト',
-    unit: '流れる水のはたらき',
-    score: 92,
-    tag: '好調',
-    markClass: 'bg-test-tertiary/10 text-test-tertiary',
-    tagClass: 'bg-test-tertiary-fixed text-test-on-tertiary-fixed',
-    scoreClass: 'text-test-on-surface',
-  },
-  {
-    subject: '国語',
-    mark: '国',
-    title: '国語テスト',
-    unit: '言葉と漢字のまとめ',
-    score: 85,
-    tag: '安定',
-    markClass: 'bg-test-secondary/10 text-test-secondary',
-    tagClass: 'bg-test-surface-container text-test-on-surface-variant',
-    scoreClass: 'text-test-on-surface',
-  },
-];
-
 export default function TestMasterAnalyticsPage() {
+  const [tests, setTests] = useState<TestRecord[]>([]);
   // 今えらんでいる教科のタブ
   const [selectedSubject, setSelectedSubject] = useState('すべて');
 
-  // 「すべて」ならぜんぶ、それ以外はその教科だけにしぼる
+  // 画面が出たときに1回だけ、保存してある記録を読みこむ
+  useEffect(() => {
+    setTests(loadTests());
+  }, []);
+
+  const points = countPoints(tests);
+
+  // ぜんぶの平均点(小数第1位まで)
+  const average =
+    tests.length > 0 ? Math.round((tests.reduce((sum, test) => sum + test.score, 0) / tests.length) * 10) / 10 : 0;
+
+  // 教科ごとの平均点。その教科のテストが1件もなければ入れない
+  const subjectAverages = SUBJECTS.map((subject) => {
+    const subjectTests = tests.filter((test) => test.subject === subject);
+    if (subjectTests.length === 0) return null;
+    return {
+      subject,
+      score: Math.round(subjectTests.reduce((sum, test) => sum + test.score, 0) / subjectTests.length),
+    };
+  })
+    // 点数の高いじゅんにならべる
+    .filter((item) => item !== null)
+    .sort((a, b) => b!.score - a!.score);
+
+  // 一覧にならべるテスト(タブでしぼりこむ)
   const shownTests =
-    selectedSubject === 'すべて'
-      ? RECENT_TESTS
-      : RECENT_TESTS.filter((test) => test.subject === selectedSubject);
+    selectedSubject === 'すべて' ? tests.slice(0, 3) : tests.filter((test) => test.subject === selectedSubject);
+
+  // ごほうびまで あと何ポイントか
+  const restPoints = Math.max(REWARD_GOAL_POINTS - points, 0);
+  const rewardPercent = Math.min((points / REWARD_GOAL_POINTS) * 100, 100);
 
   return (
     // Stitchのデザインでは、この画面の文字は 14px・行間22px・太さ500 になっている
@@ -84,13 +71,13 @@ export default function TestMasterAnalyticsPage() {
               テストマスター
             </span>
             <span className="rounded-full bg-test-surface-container px-2 py-0.5 text-xs font-medium text-test-on-surface-variant">
-              ゆうき
+              {USER_NAME}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="flex items-center gap-1.5 rounded-full bg-test-secondary-container/15 px-3 py-1 text-sm font-bold text-test-secondary">
               <span className="material-symbols-outlined text-[16px] text-test-secondary">star</span>
-              <span>530 pt</span>
+              <span>{points} pt</span>
             </div>
             <Link
               href="/"
@@ -109,40 +96,54 @@ export default function TestMasterAnalyticsPage() {
           <section className="flex flex-col gap-4 rounded-test-xl border border-test-outline-variant/30 bg-test-surface-container-lowest p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
-                <span className="text-xs font-bold tracking-wider text-test-on-surface-variant">4教科 総合へいきん</span>
+                <span className="text-xs font-bold tracking-wider text-test-on-surface-variant">
+                  {subjectAverages.length}教科 総合へいきん
+                </span>
                 <div className="mt-1 flex items-baseline gap-1">
-                  <span className="font-test-headline text-3xl font-black tracking-tight text-test-primary">83.8</span>
+                  <span className="font-test-headline text-3xl font-black tracking-tight text-test-primary">
+                    {tests.length > 0 ? average : '--'}
+                  </span>
                   <span className="text-xs font-bold text-test-on-surface-variant">点</span>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1">
-                <span className="inline-flex items-center gap-1 rounded-full bg-test-tertiary-fixed px-2.5 py-1 text-xs font-bold text-test-on-tertiary-fixed">
-                  <span className="material-symbols-outlined text-[14px]">trending_up</span>+5.2点 UP
+                <span className="inline-flex items-center gap-1 rounded-full bg-test-surface-container px-2.5 py-1 text-xs font-bold text-test-on-surface-variant">
+                  <span className="material-symbols-outlined text-[14px]">description</span>
+                  {tests.length}枚 記録ずみ
                 </span>
-                <span className="text-[11px] text-test-on-surface-variant">目標 85点まで あと1.2点</span>
+                <span className="text-[11px] text-test-on-surface-variant">テストを撮るたびに +30pt</span>
               </div>
             </div>
 
             {/* 教科別進捗バー */}
-            <div className="flex flex-col gap-2.5 border-t border-test-surface-container pt-2">
-              {SUBJECT_BARS.map((subject) => (
-                <div key={subject.name} className="flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-test-on-surface">{subject.name}</span>
-                    <span className={`font-bold ${subject.scoreClass}`}>{subject.score}点</span>
+            {subjectAverages.length > 0 ? (
+              <div className="flex flex-col gap-2.5 border-t border-test-surface-container pt-2">
+                {subjectAverages.map((item) => (
+                  <div key={item!.subject} className="flex flex-col gap-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-test-on-surface">{item!.subject}</span>
+                      <span className="font-bold text-test-primary">{item!.score}点</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-test-surface-container-low">
+                      {/* バーの長さ = 点数(%) */}
+                      <div
+                        className={`h-full rounded-full ${SUBJECT_STYLE[item!.subject].barClass}`}
+                        style={{ width: `${item!.score}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-test-surface-container-low">
-                    {/* バーの長さ = 点数(%) */}
-                    <div className={`h-full rounded-full ${subject.barClass}`} style={{ width: `${subject.score}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="border-t border-test-surface-container pt-3 text-center text-xs text-test-on-surface-variant">
+                テストを記録すると、教科ごとの点数がここにならぶよ。
+              </p>
+            )}
           </section>
 
           {/* 2. 教科スイッチャー */}
           <section className="-mx-5 flex items-center gap-2 overflow-x-auto px-5 py-1">
-            {SUBJECT_TABS.map((tab) => (
+            {['すべて', ...SUBJECTS].map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -169,12 +170,26 @@ export default function TestMasterAnalyticsPage() {
                   AI先生の分析
                 </span>
               </div>
-              <p className="font-test-headline text-sm font-bold leading-snug text-test-on-surface">
-                にがて克服: 分数の引き算マスター！
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-test-on-surface-variant">
-                次は「平均・単位量」に挑戦して目標85点突破を目指そう！
-              </p>
+              {subjectAverages.length > 0 ? (
+                <>
+                  <p className="font-test-headline text-sm font-bold leading-snug text-test-on-surface">
+                    いま いちばん とくいなのは「{subjectAverages[0]!.subject}」だね！
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-test-on-surface-variant">
+                    のばしたいのは「{subjectAverages[subjectAverages.length - 1]!.subject}」。
+                    つぎのテストでねらってみよう！
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-test-headline text-sm font-bold leading-snug text-test-on-surface">
+                    まだアドバイスできないよ
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-test-on-surface-variant">
+                    テストを記録すると、とくいな教科とにがてな教科を教えるよ。
+                  </p>
+                </>
+              )}
             </div>
           </section>
 
@@ -182,33 +197,35 @@ export default function TestMasterAnalyticsPage() {
           <section className="flex flex-col gap-2.5">
             <div className="flex items-center justify-between px-1">
               <h3 className="text-xs font-bold tracking-wider text-test-on-surface-variant">直近のテスト推移</h3>
-              <span className="text-xs text-test-on-surface-variant">最新3件</span>
+              <span className="text-xs text-test-on-surface-variant">{shownTests.length}件</span>
             </div>
             <div className="flex flex-col gap-2">
               {shownTests.map((test) => (
                 <Link
-                  key={test.title}
-                  href="/apps/test-master/test"
+                  key={test.id}
+                  href={`/apps/test-master/test#${test.id}`}
                   className="flex items-center justify-between rounded-test-xl border border-test-outline-variant/30 bg-test-surface-container-lowest p-4 shadow-sm transition-all hover:bg-test-surface-container-low"
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-test-l font-test-headline text-sm font-black ${test.markClass}`}
+                      className={`flex h-10 w-10 items-center justify-center rounded-test-l font-test-headline text-sm font-black ${SUBJECT_STYLE[test.subject].markClass}`}
                     >
-                      {test.mark}
+                      {SUBJECT_STYLE[test.subject].mark}
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <p className="font-test-headline text-sm font-bold text-test-on-surface">{test.title}</p>
-                        <span className={`rounded-test-s px-1.5 py-0.5 text-[10px] font-bold ${test.tagClass}`}>
-                          {test.tag}
+                        <p className="font-test-headline text-sm font-bold text-test-on-surface">
+                          {test.subject}テスト
+                        </p>
+                        <span className="rounded-test-s bg-test-surface-container px-1.5 py-0.5 text-[10px] font-bold text-test-on-surface-variant">
+                          {test.date}
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-test-on-surface-variant">{test.unit}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className={`font-test-headline text-xl font-black ${test.scoreClass}`}>
+                    <span className="font-test-headline text-xl font-black text-test-on-surface">
                       {test.score}
                       <span className="ml-0.5 text-xs font-normal text-test-on-surface-variant">点</span>
                     </span>
@@ -219,7 +236,7 @@ export default function TestMasterAnalyticsPage() {
               {/* えらんだ教科のテストがまだ無いとき */}
               {shownTests.length === 0 && (
                 <p className="rounded-test-xl border border-test-outline-variant/30 bg-test-surface-container-lowest p-4 text-center text-xs text-test-on-surface-variant shadow-sm">
-                  {selectedSubject}のテストは、まだ記録がないよ。
+                  {selectedSubject === 'すべて' ? 'まだテストの記録がないよ。' : `${selectedSubject}のテストは、まだ記録がないよ。`}
                 </p>
               )}
             </div>
@@ -232,15 +249,15 @@ export default function TestMasterAnalyticsPage() {
                 <span className="material-symbols-outlined text-xl text-test-secondary">redeem</span>
                 <h3 className="text-xs font-bold tracking-wider text-test-on-surface-variant">ポイントごほうび</h3>
               </div>
-              <span className="text-xs font-bold text-test-primary">あと 70 pt</span>
+              <span className="text-xs font-bold text-test-primary">あと {restPoints} pt</span>
             </div>
-            <p className="font-test-headline text-sm font-bold text-test-on-surface">ゴールドえんぴつアバターまで</p>
+            <p className="font-test-headline text-sm font-bold text-test-on-surface">{REWARD_NAME}まで</p>
             <div className="h-2.5 w-full overflow-hidden rounded-full bg-test-surface-container-low">
-              <div className="h-full rounded-full bg-test-primary" style={{ width: '88%' }} />
+              <div className="h-full rounded-full bg-test-primary" style={{ width: `${rewardPercent}%` }} />
             </div>
             <div className="flex items-center justify-between pt-1 text-xs text-test-on-surface-variant">
-              <span>現在: 530 pt</span>
-              <span>目標: 600 pt</span>
+              <span>現在: {points} pt</span>
+              <span>目標: {REWARD_GOAL_POINTS} pt</span>
             </div>
           </section>
         </div>
