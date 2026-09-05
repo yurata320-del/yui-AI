@@ -12,6 +12,25 @@ export const USER_NAME = 'ゆい';
 export const REWARD_NAME = 'ゴールドえんぴつアバター';
 export const REWARD_GOAL_POINTS = 600;
 
+/** まちがえた問題1問と、AI先生の解説 */
+export type Mistake = {
+  questionNumber: number; // 何問目か(わからないときは 0)
+  question: string; // 問題の文や式
+  yourAnswer: string; // 答案に書いてあった答え
+  correctAnswer: string; // 正しい答え
+  why: string; // なぜまちがえたか
+  steps: { title: string; body: string }[]; // 正しい解きかたの手順
+  onePoint: string; // 次に気をつけること
+};
+
+/** リベンジクイズの1問(まちがえた問題からAIが作る) */
+export type RevengeQuestion = {
+  question: string; // 問題の文や式
+  choices: string[]; // えらぶ答え(4つ)
+  answerIndex: number; // 正解が何番目か(0からかぞえる)
+  hint: string; // 解きかたのヒント
+};
+
 /** テスト1枚ぶんの記録 */
 export type TestRecord = {
   id: string; // ひとつひとつを見分けるための番号
@@ -20,21 +39,12 @@ export type TestRecord = {
   score: number; // 点数(0〜100)
   date: string; // 記録した日(例: '2026年9月5日')
   photo: string; // 撮った写真(小さくしたもの)。写真なしのときは空っぽ
+  correctCount: number; // 正解した数(わからないときは -1)
+  wrongCount: number; // まちがえた数(わからないときは -1)
+  mistakes: Mistake[]; // まちがえた問題と解説(AIが読みとったもの)
+  quiz: RevengeQuestion[]; // リベンジクイズの問題(AIが作ったもの)
+  readByAI: boolean; // AIが読みとったなら true、自分で入力したなら false
 };
-
-/** リベンジクイズの1問(まちがえた問題から作る) */
-export type RevengeQuestion = {
-  unit: string;
-  left: { top: string; bottom: string };
-  right: { top: string; bottom: string };
-  choices: string[];
-  answerIndex: number;
-  hintTitle: string;
-  hintBody: string;
-};
-
-// リベンジクイズの問題。まちがえた問題から自動で作るしくみは、これから作るところ
-export const REVENGE_QUESTIONS: RevengeQuestion[] = [];
 
 /**
  * 教科ごとの見た目(1文字のマーク・色)。

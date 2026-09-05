@@ -57,6 +57,21 @@ export function countPoints(tests: TestRecord[]): number {
   return tests.length * 30;
 }
 
+/**
+ * ぜんぶの記録から、リベンジクイズの問題をあつめる(新しい順に、多くても3問)。
+ * どのテストの問題かも分かるように、教科と単元をいっしょに返す。
+ */
+export function collectQuiz(tests: TestRecord[]) {
+  const questions = [];
+  for (const test of tests) {
+    for (const question of test.quiz) {
+      questions.push({ ...question, subject: test.subject, unit: test.unit });
+      if (questions.length === 3) return questions;
+    }
+  }
+  return questions;
+}
+
 /** 今日の日づけを「2026年9月5日」の形にする */
 export function todayText(): string {
   const now = new Date();

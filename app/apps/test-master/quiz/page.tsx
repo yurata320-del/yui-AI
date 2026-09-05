@@ -1,29 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import TestBottomNav from '../components/TestBottomNav';
-import { REVENGE_QUESTIONS } from '../lib/data';
+import { collectQuiz, loadTests } from '../lib/storage';
 
 /**
- * 【テストマスター】3問リベンジクイズの画面
+ * 【テストマスター】リベンジクイズの画面
  *
  * Stitch のデザイン「3問リベンジクイズ (シンプル版)」を、そのまま画面にしたもの。
  *
  * ここでやること:
- *   - 分数のひき算の問題を、1問ずつ出す(ぜんぶで3問)
+ *   - AIがまちがえた問題から作ったクイズを、1問ずつ出す(多くても3問)
  *   - A〜Dから答えをえらんで「答え合わせをする」を押す
- *   - 正解なら次の問題へ。3問おわったら「たいへんよくできました！」が出る
- *   - 「ヒントを見る」で、通分のヒントを出せる
+ *   - 正解なら次の問題へ。ぜんぶ終わったら「たいへんよくできました！」が出る
+ *   - 「ヒントを見る」で、AI先生のヒントを出せる
  */
-
-// クイズの問題は lib/data.ts にある(まちがえた問題から作る予定なので、いまはカラッポ)
-const QUESTIONS = REVENGE_QUESTIONS;
 
 // A・B・C・D の文字
 const CHOICE_LABELS = ['A', 'B', 'C', 'D'];
 
 export default function TestMasterQuizPage() {
+  // 保存してある記録から集めた、クイズの問題
+  const [questions, setQuestions] = useState<ReturnType<typeof collectQuiz>>([]);
+  // 記録を読みこみ終わったかどうか(読む前に「問題がないよ」と出さないため)
+  const [isLoaded, setIsLoaded] = useState(false);
   // 今なん問目か(0からかぞえる)
   const [questionNumber, setQuestionNumber] = useState(0);
   // えらんでいる答えの番号。まだえらんでいないときは null
@@ -32,11 +33,17 @@ export default function TestMasterQuizPage() {
   const [isHintShown, setIsHintShown] = useState(false);
   // まちがえたときのメッセージ
   const [isWrong, setIsWrong] = useState(false);
-  // 3問ぜんぶ正解したかどうか(お祝いの画面を出す)
+  // ぜんぶ正解したかどうか(お祝いの画面を出す)
   const [isFinished, setIsFinished] = useState(false);
 
+  // 画面が出たときに1回だけ、保存してある記録からクイズを集める
+  useEffect(() => {
+    setQuestions(collectQuiz(loadTests()));
+    setIsLoaded(true);
+  }, []);
+
   // 問題が1問もないときは、「まだ問題がないよ」の画面を出す
-  if (QUESTIONS.length === 0) {
+  if (isLoaded && questions.length === 0) {
     return (
       <div className="text-[14px] font-medium leading-[22px]">
         <header className="test-pt-safe fixed top-0 z-40 w-full border-b border-test-surface-variant/40 bg-test-surface/90 backdrop-blur-md">
@@ -59,16 +66,16 @@ export default function TestMasterQuizPage() {
             <span className="material-symbols-outlined text-4xl text-test-outline-variant">bolt</span>
             <p className="mt-2 font-test-headline text-sm font-bold text-test-on-surface">まだ問題がないよ</p>
             <p className="text-xs leading-relaxed text-test-on-surface-variant">
-              テストのまちがいから問題を作るしくみは、
+              テストを撮ると、まちがえた問題から
               <br />
-              これから いっしょに作ろう！
+              AIがクイズを作ってくれるよ。
             </p>
             <Link
               href="/apps/test-master"
               className="mt-4 flex items-center justify-center gap-2 rounded-test-xl bg-test-primary px-6 py-3 font-test-headline text-sm font-bold text-test-on-primary shadow-sm active:scale-[0.98]"
             >
-              <span className="material-symbols-outlined text-xl">home</span>
-              <span>ホームへもどる</span>
+              <span className="material-symbols-outlined text-xl">photo_camera</span>
+              <span>テストを撮りにいく</span>
             </Link>
           </div>
         </main>
@@ -78,7 +85,10 @@ export default function TestMasterQuizPage() {
     );
   }
 
-  const question = QUESTIONS[questionNumber];
+  const question = questions[questionNumber];
+
+  // まだ読みこみ中のときは、何も出さない
+  if (!question) return null;
 
   // 「答え合わせをする」を押したとき
   function handleCheckAnswer() {
@@ -87,7 +97,7 @@ export default function TestMasterQuizPage() {
 
     if (selectedIndex === question.answerIndex) {
       // 正解！ 最後の問題なら お祝い、まだなら次の問題へ
-      if (questionNumber === QUESTIONS.length - 1) {
+      if (questionNumber === questions.length - 1) {
         setIsFinished(true);
       } else {
         setQuestionNumber(questionNumber + 1);
@@ -117,7 +127,7 @@ export default function TestMasterQuizPage() {
             </Link>
             <div className="flex items-center gap-1.5">
               <span className="rounded-full bg-test-surface-container px-2 py-0.5 text-xs font-bold text-test-primary">
-                算数
+                {question.subject}
               </span>
               <span className="font-test-headline text-sm font-bold text-test-on-surface">リベンジクイズ</span>
             </div>
@@ -135,14 +145,15 @@ export default function TestMasterQuizPage() {
           <div className="flex items-center justify-between text-xs">
             <span className="font-bold text-test-on-surface-variant">{question.unit}</span>
             <span className="font-black text-test-primary">
-              問 {questionNumber + 1} <span className="text-xs font-normal text-test-on-surface-variant">/ 3問</span>
+              問 {questionNumber + 1}{' '}
+              <span className="text-xs font-normal text-test-on-surface-variant">/ {questions.length}問</span>
             </span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-test-surface-container">
             {/* バーの長さ = 今なん問目か */}
             <div
               className="h-full rounded-full bg-test-primary transition-all duration-300"
-              style={{ width: `${((questionNumber + 1) / QUESTIONS.length) * 100}%` }}
+              style={{ width: `${((questionNumber + 1) / questions.length) * 100}%` }}
             />
           </div>
         </section>
@@ -153,26 +164,12 @@ export default function TestMasterQuizPage() {
             問題
           </span>
           <h2 className="mb-4 self-start text-left font-test-headline text-base font-black text-test-on-surface">
-            次のひき算の答えとして正しいものはどれかな？
+            正しい答えはどれかな？
           </h2>
 
-          {/* 分数の式 */}
-          <div className="my-1 flex w-full items-center justify-center gap-3 rounded-test-xl bg-test-surface-container-low px-4 py-5 font-test-headline text-2xl font-black text-test-on-surface shadow-inner">
-            <div className="flex flex-col items-center leading-none">
-              <span className="pb-1 text-2xl">{question.left.top}</span>
-              <div className="h-0.5 w-7 rounded-full bg-test-on-surface" />
-              <span className="pt-1 text-2xl">{question.left.bottom}</span>
-            </div>
-            <span className="px-1 text-2xl font-bold text-test-primary">−</span>
-            <div className="flex flex-col items-center leading-none">
-              <span className="pb-1 text-2xl">{question.right.top}</span>
-              <div className="h-0.5 w-7 rounded-full bg-test-on-surface" />
-              <span className="pt-1 text-2xl">{question.right.bottom}</span>
-            </div>
-            <span className="px-1 text-2xl text-test-on-surface-variant">＝</span>
-            <div className="flex h-12 w-12 items-center justify-center rounded-test-xl border-2 border-dashed border-test-primary/40 bg-test-surface-container-lowest text-2xl font-black text-test-primary shadow-sm">
-              ？
-            </div>
+          {/* 問題(AIがまちがえた問題から作ったもの) */}
+          <div className="my-1 flex w-full items-center justify-center gap-3 rounded-test-xl bg-test-surface-container-low px-4 py-5 text-center font-test-headline text-2xl font-black leading-relaxed text-test-on-surface shadow-inner">
+            {question.question}
           </div>
 
           {/* ヒントのボタン */}
@@ -191,9 +188,9 @@ export default function TestMasterQuizPage() {
           {isHintShown && (
             <div className="mt-2 flex w-full flex-col gap-1 rounded-test-xl border border-test-outline-variant/30 bg-test-surface-container-low p-3 text-left text-xs leading-relaxed text-test-on-surface-variant">
               <span className="flex items-center gap-1 font-bold text-test-primary">
-                <span className="material-symbols-outlined text-sm">tips_and_updates</span> {question.hintTitle}
+                <span className="material-symbols-outlined text-sm">tips_and_updates</span> AI先生のヒント
               </span>
-              <span>{question.hintBody}</span>
+              <span>{question.hint}</span>
             </div>
           )}
         </section>

@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import TestBottomNav from './components/TestBottomNav';
 import TestSaveForm from './components/TestSaveForm';
-import { REVENGE_QUESTIONS, SUBJECT_STYLE, USER_NAME, type TestRecord } from './lib/data';
+import { SUBJECT_STYLE, USER_NAME, type TestRecord } from './lib/data';
+import { canUseAI, readTestPhoto, type AiReadResult } from './lib/ai';
 import { shrinkPhoto } from './lib/photo';
-import { addTest, countPoints, loadTests } from './lib/storage';
+import { addTest, countPoints, loadTests, collectQuiz } from './lib/storage';
 
 /**
  * 【テストマスター】ホーム画面(テストスキャン)
@@ -24,6 +25,10 @@ export default function TestMasterHomePage() {
   const [tests, setTests] = useState<TestRecord[]>([]);
   // 撮ったばかりの写真。入力画面を出すときだけ中身が入る
   const [newPhoto, setNewPhoto] = useState('');
+  // AIが読みとった結果。読みとれなかったときは null
+  const [aiRead, setAiRead] = useState<AiReadResult | null>(null);
+  // AIが読みとっているとちゅうかどうか
+  const [isReading, setIsReading] = useState(false);
   // 画面の上に出す、みじかいお知らせ
   const [message, setMessage] = useState('');
 
@@ -46,8 +51,23 @@ export default function TestMasterHomePage() {
     try {
       // 写真は大きいので、小さくしてから使う
       const smallPhoto = await shrinkPhoto(file);
+
+      // AIが使えるときは、写真を読みとってもらう(少し時間がかかる)
+      if (canUseAI()) {
+        setIsReading(true);
+        const result = await readTestPhoto(smallPhoto);
+        setIsReading(false);
+        setAiRead(result);
+        if (result === null) {
+          setMessage('AIの読みとりは使えなかったから、自分で入力してね。');
+        }
+      } else {
+        setAiRead(null);
+      }
+
       setNewPhoto(smallPhoto);
     } catch {
+      setIsReading(false);
       setMessage('写真を読みこめなかったよ。もう一度ためしてみてね。');
     }
   }
@@ -56,12 +76,16 @@ export default function TestMasterHomePage() {
   function handleSaveTest(test: TestRecord) {
     setTests(addTest(test));
     setNewPhoto('');
-    setMessage(`✅ ${test.subject}のテスト（${test.score}点）を記録したよ！ +30pt`);
+    setAiRead(null);
+    const quizNote = test.quiz.length > 0 ? ` リベンジクイズが${test.quiz.length}問できたよ！` : '';
+    setMessage(`✅ ${test.subject}のテスト（${test.score}点）を記録したよ！ +30pt${quizNote}`);
   }
 
   // さいきんのテスト記録は、新しいものから3件だけ出す
   const recentTests = tests.slice(0, 3);
   const points = countPoints(tests);
+  // リベンジクイズの問題(AIがまちがいから作ったもの)
+  const quiz = collectQuiz(tests);
 
   return (
     <>
@@ -156,7 +180,7 @@ export default function TestMasterHomePage() {
         <section className="flex flex-col gap-2">
           <h3 className="px-1 text-xs font-bold tracking-wider text-test-on-surface-variant">いまのやること</h3>
 
-          {REVENGE_QUESTIONS.length > 0 ? (
+          {quiz.length > 0 ? (
             <div className="flex items-center justify-between gap-3 rounded-test-l border border-test-outline-variant/30 bg-test-surface-container-lowest p-4 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-test-l bg-test-secondary-container/20 text-test-secondary">
@@ -165,9 +189,9 @@ export default function TestMasterHomePage() {
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
                     <span className="rounded-test-s bg-test-surface-container px-1.5 py-0.5 text-xs font-bold text-test-primary">
-                      算数
+                      {quiz[0].subject}
                     </span>
-                    <span className="text-xs text-test-on-surface-variant">あと{REVENGE_QUESTIONS.length}問</span>
+                    <span className="text-xs text-test-on-surface-variant">あと{quiz.length}問</span>
                   </div>
                   <span className="mt-0.5 font-test-headline text-sm font-bold text-test-on-surface">
                     まちがいリベンジクイズ
@@ -193,7 +217,7 @@ export default function TestMasterHomePage() {
                   まだリベンジする問題はないよ
                 </span>
                 <span className="mt-0.5 text-xs text-test-on-surface-variant">
-                  まちがえた問題からクイズを作るしくみは、これから作るよ。
+                  テストを撮ると、まちがえた問題からAIがクイズを作るよ。
                 </span>
               </div>
             </div>
@@ -253,9 +277,33 @@ export default function TestMasterHomePage() {
         </section>
       </main>
 
+      {/* AIが写真を読みとっているあいだ、ぐるぐる待つ画面 */}
+      {isReading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-test-inverse-surface/80 p-6 text-center backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-test-l bg-test-surface-container-lowest p-8 shadow-lg">
+            {/* くるくる回る輪(AIが考えているあいだの目じるし) */}
+            <span className="h-10 w-10 animate-spin rounded-full border-4 border-test-surface-container border-t-test-primary" />
+            <p className="font-test-headline text-sm font-bold text-test-on-surface">AIがテストを読んでいるよ…</p>
+            <p className="text-xs leading-relaxed text-test-on-surface-variant">
+              点数やまちがえた問題をさがしているところ。
+              <br />
+              20秒くらいかかることもあるよ。
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 写真を撮ったあとに出る、入力画面 */}
-      {newPhoto !== '' && (
-        <TestSaveForm photo={newPhoto} onSave={handleSaveTest} onCancel={() => setNewPhoto('')} />
+      {newPhoto !== '' && !isReading && (
+        <TestSaveForm
+          photo={newPhoto}
+          aiRead={aiRead}
+          onSave={handleSaveTest}
+          onCancel={() => {
+            setNewPhoto('');
+            setAiRead(null);
+          }}
+        />
       )}
 
       {/* 5. 直感的なボトムナビゲーション */}

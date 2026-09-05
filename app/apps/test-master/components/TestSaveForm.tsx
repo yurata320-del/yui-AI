@@ -2,30 +2,36 @@
 
 import { useState } from 'react';
 import { SUBJECTS, type TestRecord } from '../lib/data';
+import type { AiReadResult } from '../lib/ai';
 import { todayText } from '../lib/storage';
 
 /**
  * 写真をえらんだあとに出る、「テストを記録する」入力画面。
  *
- * 本当はAIが写真から教科と点数を読みとる予定だけど、それはまだ作れていないので、
- * いまは自分で えらんで・入力してもらう。
+ * AIが読みとれたときは、その内容が最初から入っている(まちがっていたら直せる)。
+ * AIが使えなかったときは、からっぽの状態で自分で入力する。
  *
- * photo    … 撮った写真(小さくしたもの)
- * onSave   … 「記録する」を押したときに呼ばれる
- * onCancel … 「やめる」を押したときに呼ばれる
+ * photo   … 撮った写真(小さくしたもの)
+ * aiRead  … AIが読みとった結果。読みとれなかったときは null
+ * onSave  … 「記録する」を押したときに呼ばれる
+ * onCancel… 「やめる」を押したときに呼ばれる
  */
 export default function TestSaveForm({
   photo,
+  aiRead,
   onSave,
   onCancel,
 }: {
   photo: string;
+  aiRead: AiReadResult | null;
   onSave: (test: TestRecord) => void;
   onCancel: () => void;
 }) {
-  const [subject, setSubject] = useState<TestRecord['subject']>('算数');
-  const [unit, setUnit] = useState('');
-  const [score, setScore] = useState('');
+  // AIが読みとれたときは、その内容を最初から入れておく
+  const [subject, setSubject] = useState<TestRecord['subject']>(aiRead?.subject ?? '算数');
+  const [unit, setUnit] = useState(aiRead?.unit ?? '');
+  // 点数が -1 のときは「読みとれなかった」ということなので、からっぽにする
+  const [score, setScore] = useState(aiRead && aiRead.score >= 0 ? String(aiRead.score) : '');
 
   // 点数が0〜100の数字で入っているかどうか
   const scoreNumber = Number(score);
@@ -40,11 +46,16 @@ export default function TestSaveForm({
       score: scoreNumber,
       date: todayText(),
       photo,
+      correctCount: aiRead?.correctCount ?? -1,
+      wrongCount: aiRead?.wrongCount ?? -1,
+      mistakes: aiRead?.mistakes ?? [],
+      quiz: aiRead?.quiz ?? [],
+      readByAI: aiRead !== null,
     });
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-test-inverse-surface/80 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end overflow-y-auto bg-test-inverse-surface/80 p-4 backdrop-blur-sm">
       <div className="test-pb-safe mx-auto flex w-full max-w-md flex-col gap-4 rounded-test-l bg-test-surface-container-lowest p-6 shadow-lg">
         <div className="flex items-center justify-between">
           <h3 className="font-test-headline text-lg font-black text-test-on-surface">テストを記録する</h3>
@@ -57,6 +68,20 @@ export default function TestSaveForm({
             <span className="material-symbols-outlined text-xl">close</span>
           </button>
         </div>
+
+        {/* AIが読みとれたときのお知らせ */}
+        {aiRead !== null && (
+          <div className="flex items-start gap-2 rounded-test-m bg-test-primary/10 p-3">
+            <span className="material-symbols-outlined mt-0.5 text-[18px] text-test-primary">auto_awesome</span>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-test-primary">AIが読みとったよ</span>
+              <span className="text-[11px] leading-relaxed text-test-on-surface-variant">
+                まちがえた問題 {aiRead.mistakes.length}問・リベンジクイズ {aiRead.quiz.length}問も作ったよ。
+                ちがっていたら、下で直してね。
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* 撮った写真 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
