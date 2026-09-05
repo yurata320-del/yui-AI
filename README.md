@@ -54,9 +54,29 @@ npm run dev   # ← アプリ本体
 ```
 
 - かぎは `.env.local` の中だけ。GitHubには上がらない（`.gitignore`に書いてある）
-- AIが使えるのは `http://localhost:3000` で開いたときだけ。
-  公開ページ（GitHub Pages）では、自分で教科と点数を入力する形になる
-- 写真1枚を読ませると **1円くらい** かかる
+- 写真1枚あたり **約5円**（`claude-opus-5` の実測: 入力3,228 / 出力719 tokens）。
+  安くしたいときは `ai-server/read-test.mjs` の `model` を
+  `claude-sonnet-5`（約2円）や `claude-haiku-4-5`（約1円）に変える
+
+### スマホでもAIを使う（Cloudflare Workers）
+
+公開ページはHTTPSなので `http://localhost` は呼べない。
+インターネット側にもAIサーバー（`ai-server/worker.js`）を置く。
+
+```bash
+cd ai-server
+npx wrangler login                        # Cloudflareにログイン（ブラウザが開く）
+npx wrangler secret put ANTHROPIC_API_KEY # かぎを預ける（貼り付けは画面に出ない）
+npx wrangler deploy                       # 公開。最後にURLが表示される
+```
+
+表示されたURL（例 `https://yui-test-master-ai.xxx.workers.dev`）を、
+GitHubの **Settings > Secrets and variables > Actions > Variables** に
+`AI_URL` という名前で登録する（末尾に `/read-test` は不要）。
+登録後に `git push` すると、公開ページからAIが使えるようになる。
+
+- Worker側は、決めたページ（GitHub Pages / localhost）からのお願いだけ受けつける
+- 念のため、**Anthropic Console で利用上限（Spend limit）を設定しておく**こと
 
 ---
 

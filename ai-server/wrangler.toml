@@ -1,0 +1,12 @@
+# Cloudflare Workers の設定ファイル。
+#
+# ここに書くのは「名前」と「どのファイルを動かすか」だけ。
+# APIキーはここには書かない（シークレットとして別に預ける）:
+#   npx wrangler secret put ANTHROPIC_API_KEY
+
+name = "yui-test-master-ai"
+main = "worker.js"
+compatibility_date = "2026-09-05"
+
+# 使った分だけの無料枠で動かす（1日10万リクエストまで無料）
+workers_dev = true

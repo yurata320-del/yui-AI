@@ -31,6 +31,11 @@ jobs:
       - run: npm run build
         env:
           GITHUB_PAGES: 'true' # next.config.mjs に「GitHub Pages向けにビルドして」と伝える目印
+          # スマホからAIを使うための、インターネット上のAIサーバー(Cloudflare Worker)の住所。
+          # GitHubの Settings > Secrets and variables > Actions > Variables に
+          # AI_URL という名前で登録する(例: https://yui-test-master-ai.○○.workers.dev/)
+          # 登録していないときは空っぽになり、AIは使わず自分で入力する形になる。
+          NEXT_PUBLIC_AI_URL: ${{ vars.AI_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
