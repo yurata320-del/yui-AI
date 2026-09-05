@@ -77,10 +77,13 @@ const server = createServer(async (request, response) => {
     try {
       const { photo } = JSON.parse(body);
       console.log('📸 写真を受けとったよ。AIに読んでもらっています…');
+      const startedAt = Date.now();
 
       const { result, usage } = await askClaude(photo, API_KEY);
 
+      const seconds = ((Date.now() - startedAt) / 1000).toFixed(1);
       console.log(`✅ 読みとれた: ${result.subject} ${result.score}点 / まちがい ${result.mistakes.length}問`);
+      console.log(`   かかった時間: ${seconds}秒`);
       console.log(`   つかった文字: 入力 ${usage.input_tokens} / 出力 ${usage.output_tokens}`);
 
       response.writeHead(200, { 'content-type': 'application/json' });

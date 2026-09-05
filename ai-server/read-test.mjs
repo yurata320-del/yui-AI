@@ -31,6 +31,17 @@ const ANSWER_SHAPE = {
           question: { type: 'string', description: '問題の文や式' },
           yourAnswer: { type: 'string', description: '答案に書いてあった答え' },
           correctAnswer: { type: 'string', description: '正しい答え' },
+          // ↓ この2つは「本当にまちがい？」を確かめるためのもの。
+          //   思い込みで「まちがい」と決めつけるのを防ぐ。
+          evidence: {
+            type: 'string',
+            description:
+              'まちがいだと分かる、写真に写っている印。例:「赤い×がついている」「赤で正しい答えが書き直されている」。印が見あたらないなら「印なし」と書く',
+          },
+          isMarkedWrong: {
+            type: 'boolean',
+            description: '赤い×や書き直しなど、先生がまちがいとした印が写真にあるなら true',
+          },
           why: { type: 'string', description: 'なぜまちがえたか。ひとことで' },
           steps: {
             type: 'array',
@@ -47,7 +58,17 @@ const ANSWER_SHAPE = {
           },
           onePoint: { type: 'string', description: '次に気をつけることを1文で' },
         },
-        required: ['questionNumber', 'question', 'yourAnswer', 'correctAnswer', 'why', 'steps', 'onePoint'],
+        required: [
+          'questionNumber',
+          'question',
+          'yourAnswer',
+          'correctAnswer',
+          'evidence',
+          'isMarkedWrong',
+          'why',
+          'steps',
+          'onePoint',
+        ],
         additionalProperties: false,
       },
     },
@@ -78,15 +99,67 @@ const INSTRUCTION = `この写真は、小学生のテストの答案です。�
 2. 単元(なんの勉強か)
 3. 点数(赤ペンで書かれていることが多い)
 4. 正解した数と、まちがえた数
-5. まちがえた問題(赤いバツがついている問題や、答えがまちがっている問題)を、多くても3問
-   - その問題の式や文、答案に書いてある答え、正しい答え、なぜまちがえたか
-   - 正しい解きかたを2〜3ステップで
-6. まちがえた問題と同じ考えかたで解ける「にた問題」を3問
+
+5. まちがえた問題(多くても3問)
+
+   ★ここが一番大事。まちがいの判定はきびしくすること。★
+
+   「まちがえた問題」に入れてよいのは、写真に次のどれかが写っている問題だけ:
+     - 赤い × や / (斜線)、チェックの取り消しがついている
+     - 赤ペンで正しい答えに書き直されている
+     - 「もう一度」「なおし」など、やり直しの指示が書かれている
+
+   入れてはいけないもの:
+     - ○(まる)がついている問題 → 正解なので絶対に入れない
+     - 印が何もついていない問題 → 入れない
+     - 答えが空欄の問題で、×もついていないもの → 入れない
+     - 「自分で計算したら答えがちがう気がする」だけの問題 → 入れない
+
+   入れる前に、かならず自分でも計算して確かめること。
+   答案の答えが実際には正しいなら、×がついていても入れない。
+
+   まちがいが1つも無いなら、mistakes は空っぽ([])にする。それが正しい答えです。
+
+6. リベンジ問題
+   - 5で挙げたまちがいがあるときだけ、同じ考えかたで解ける「にた問題」を3問つくる
+   - まちがいが無いときは、quiz も空っぽ([])にする
 
 大事なこと:
 - 説明は小学生にわかる、やさしい日本語で書く
 - 写真から読みとれないことは、むりに作らない(点数が読めないときは -1)
-- まちがいが見つからないときは、mistakes と quiz を空っぽ([])にする`;
+- 「たぶんまちがい」で入れない。確かな印があるものだけ入れる`;
+
+/**
+ * AIの答えの「つじつま」を合わせる。
+ *
+ * AIは、まちがっていない問題まで「まちがい」として挙げてしまうことがある。
+ * お願いの文だけでは防ぎきれないので、ここでも機械的にふるいにかける。
+ *
+ * ふるいのルール:
+ *   1. 先生の印(赤い×など)が無いものは、まちがいとして扱わない
+ *   2. 点数が100点なら、まちがいは無いはず
+ *   3. まちがいの数より多く挙がっていたら、多いぶんは捨てる
+ *   4. まちがいが1つも無いなら、リベンジ問題も作らない
+ */
+function keepOnlyRealMistakes(result) {
+  // 1. 印があるものだけ残す
+  let mistakes = result.mistakes.filter((mistake) => mistake.isMarkedWrong === true);
+
+  // 2. 100点なら、まちがいは無い
+  if (result.score === 100) {
+    mistakes = [];
+  }
+
+  // 3. 「まちがえた数」より多いときは、そのぶんだけにする
+  if (typeof result.wrongCount === 'number' && result.wrongCount >= 0) {
+    mistakes = mistakes.slice(0, result.wrongCount);
+  }
+
+  // 4. まちがいが無いなら、リベンジ問題も無し
+  const quiz = mistakes.length === 0 ? [] : result.quiz;
+
+  return { ...result, mistakes, quiz };
+}
 
 /**
  * クイズの選択肢の順番を、バラバラに入れかえる。
@@ -140,8 +213,14 @@ export async function askClaude(photoDataUrl, apiKey) {
           ],
         },
       ],
-      // 決めた形(ANSWER_SHAPE)のJSONで答えてもらう
-      output_config: { format: { type: 'json_schema', schema: ANSWER_SHAPE } },
+      output_config: {
+        // 決めた形(ANSWER_SHAPE)のJSONで答えてもらう
+        format: { type: 'json_schema', schema: ANSWER_SHAPE },
+        // AIがどれくらい じっくり考えるか。
+        // 写真から読みとる作業に「max」までは要らない。
+        // 'medium' にすると待ち時間がぐっと短くなる(その分ねだんも安い)。
+        effort: 'medium',
+      },
     }),
   });
 
@@ -156,7 +235,8 @@ export async function askClaude(photoDataUrl, apiKey) {
   const textBlock = data.content.find((block) => block.type === 'text');
   if (!textBlock) throw new Error('AIの答えが読みとれなかったよ');
 
-  const result = JSON.parse(textBlock.text);
+  // まちがっていない問題を「まちがい」として拾っていないか、ふるいにかける
+  const result = keepOnlyRealMistakes(JSON.parse(textBlock.text));
   // 正解の位置がかたよらないように、選択肢を混ぜる
   result.quiz = shuffleChoices(result.quiz);
 

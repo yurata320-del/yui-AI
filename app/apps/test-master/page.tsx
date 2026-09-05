@@ -7,7 +7,7 @@ import TestSaveForm from './components/TestSaveForm';
 import { SUBJECT_STYLE, USER_NAME, type TestRecord } from './lib/data';
 import { canUseAI, readTestPhoto, type AiReadResult } from './lib/ai';
 import { shrinkPhoto } from './lib/photo';
-import { addTest, countPoints, loadTests, collectQuiz } from './lib/storage';
+import { addTest, countPoints, loadTests, collectQuiz, todayText } from './lib/storage';
 
 /**
  * 【テストマスター】ホーム画面(テストスキャン)
@@ -29,6 +29,8 @@ export default function TestMasterHomePage() {
   const [aiRead, setAiRead] = useState<AiReadResult | null>(null);
   // AIが読みとっているとちゅうかどうか
   const [isReading, setIsReading] = useState(false);
+  // 読みとりを始めてから、何秒たったか(待っているあいだの目安)
+  const [waitedSeconds, setWaitedSeconds] = useState(0);
   // 画面の上に出す、みじかいお知らせ
   const [message, setMessage] = useState('');
 
@@ -41,6 +43,14 @@ export default function TestMasterHomePage() {
     setTests(loadTests());
   }, []);
 
+  // 読みとり中だけ、1秒ごとに秒数を数える
+  useEffect(() => {
+    if (!isReading) return;
+    const timer = setInterval(() => setWaitedSeconds((seconds) => seconds + 1), 1000);
+    // 読みとりが終わったら、数えるのをやめる
+    return () => clearInterval(timer);
+  }, [isReading]);
+
   // 写真をえらんだ(撮った)ときに呼ばれる
   async function handlePhotoChosen(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -52,33 +62,58 @@ export default function TestMasterHomePage() {
       // 写真は大きいので、小さくしてから使う
       const smallPhoto = await shrinkPhoto(file);
 
-      // AIが使えるときは、写真を読みとってもらう(少し時間がかかる)
-      if (canUseAI()) {
-        setIsReading(true);
-        const result = await readTestPhoto(smallPhoto);
-        setIsReading(false);
-        setAiRead(result);
-        if (result === null) {
-          setMessage('AIの読みとりは使えなかったから、自分で入力してね。');
-        }
-      } else {
+      // AIが使えないときは、すぐに自分で入力する画面を出す
+      if (!canUseAI()) {
         setAiRead(null);
+        setNewPhoto(smallPhoto);
+        return;
       }
 
+      // AIに読みとってもらう(少し時間がかかる)
+      setWaitedSeconds(0);
+      setIsReading(true);
+      const result = await readTestPhoto(smallPhoto);
+      setIsReading(false);
+
+      // 点数までちゃんと読めたときは、確認画面を出さずにそのまま記録する
+      if (result !== null && result.score >= 0 && result.score <= 100) {
+        saveTest({
+          id: String(Date.now()),
+          subject: result.subject,
+          unit: result.unit === '' ? 'たんげん未記入' : result.unit,
+          score: result.score,
+          date: todayText(),
+          photo: smallPhoto,
+          correctCount: result.correctCount,
+          wrongCount: result.wrongCount,
+          mistakes: result.mistakes,
+          quiz: result.quiz,
+          readByAI: true,
+        });
+        return;
+      }
+
+      // 点数が読めなかった/AIが使えなかったときだけ、自分で入力してもらう
+      setAiRead(result);
       setNewPhoto(smallPhoto);
+      setMessage(
+        result === null
+          ? 'AIの読みとりが うまくいかなかったよ。自分で入力してね。'
+          : '点数が読みとれなかったよ。自分で入れてね。'
+      );
     } catch {
       setIsReading(false);
       setMessage('写真を読みこめなかったよ。もう一度ためしてみてね。');
     }
   }
 
-  // 入力画面で「記録する」を押したとき
-  function handleSaveTest(test: TestRecord) {
+  // テストを1件、記録する(AIが読めたときも、自分で入力したときも、ここを通る)
+  function saveTest(test: TestRecord) {
     setTests(addTest(test));
     setNewPhoto('');
     setAiRead(null);
     const quizNote = test.quiz.length > 0 ? ` リベンジクイズが${test.quiz.length}問できたよ！` : '';
-    setMessage(`✅ ${test.subject}のテスト（${test.score}点）を記録したよ！ +30pt${quizNote}`);
+    setMessage(`✅ ${test.subject}「${test.unit}」${test.score}点 を記録したよ！ +30pt${quizNote}`);
   }
 
   // さいきんのテスト記録は、新しいものから3件だけ出す
@@ -287,8 +322,9 @@ export default function TestMasterHomePage() {
             <p className="text-xs leading-relaxed text-test-on-surface-variant">
               点数やまちがえた問題をさがしているところ。
               <br />
-              20秒くらいかかることもあるよ。
+              読みおわったら、そのまま記録するよ。
             </p>
+            <p className="font-test-headline text-2xl font-black text-test-primary">{waitedSeconds}秒</p>
           </div>
         </div>
       )}
@@ -298,7 +334,7 @@ export default function TestMasterHomePage() {
         <TestSaveForm
           photo={newPhoto}
           aiRead={aiRead}
-          onSave={handleSaveTest}
+          onSave={saveTest}
           onCancel={() => {
             setNewPhoto('');
             setAiRead(null);
